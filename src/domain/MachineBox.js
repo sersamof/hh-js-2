@@ -9,6 +9,29 @@ const getActionOrBreakMachine = (machineBox, transitionName) => {
     return transitions[transitionName];
 };
 
+// позволяет тригернуть обработчики события on стейта state машины machine с данными event
+const trigger = (machineBox, on, state, event) => {
+    const maybeMapActionNameToHandler = (action) => {
+        if (typeof action === 'string') {
+            if (action in machine.actions) {
+                return machine.actions[action];
+            } else {
+                machineBox.broken = true;
+                throw new UnknownAction(action, on, state);
+            }
+        }
+        return action;
+    };
+
+    const machine = machineBox.machine;
+    const handlers = [machine.states[state][on]]; // дабы не обрабатывать отдельно случаи array / not array
+    handlers
+        .reduce((acc, val) => acc.concat(val), []) // flatMap in stage-3 :(
+        .map(maybeMapActionNameToHandler)
+        .filter((handler) => typeof handler === 'function')
+        .forEach((handler) => handler(event));
+};
+
 export default class MachineBox {
     constructor(machine, context, state) {
         this.machine = machine;
@@ -18,36 +41,13 @@ export default class MachineBox {
     }
 
     transition(transitionName, event) {
-        this.trigger('onExit', this.state, event);
+        trigger(this, 'onExit', this.state, event);
         const action = getActionOrBreakMachine(this, transitionName);
         if ('service' in action) {
             action.service(event);
         } else if ('target' in action) {
             this.setState(action.target, event);
         }
-    }
-
-    // позволяет тригернуть обработчики события on стейта state машины machine с данными event
-    trigger(on, state, event) {
-        const maybeMapActionNameToHandler = (action) => {
-            if (typeof action === 'string') {
-                if (action in machine.actions) {
-                    return machine.actions[action];
-                } else {
-                    this.broken = true;
-                    throw new UnknownAction(action, on, state);
-                }
-            }
-            return action;
-        };
-
-        const machine = this.machine;
-        const handlers = [machine.states[state][on]]; // дабы не обрабатывать отдельно случаи array / not array
-        handlers
-            .reduce((acc, val) => acc.concat(val), []) // flatMap in stage-3 :(
-            .map(maybeMapActionNameToHandler)
-            .filter((handler) => typeof handler === 'function')
-            .forEach((handler) => handler(event));
     }
 
     setContext(context) {
@@ -58,9 +58,9 @@ export default class MachineBox {
     }
 
     setState(state, event) {
-        this.trigger('onExit', this.state, event);
+        trigger(this, 'onExit', this.state, event);
         this.state = state;
-        this.trigger('onEntry', state, event);
+        trigger(this, 'onEntry', state, event);
         return this.state;
     }
 }
