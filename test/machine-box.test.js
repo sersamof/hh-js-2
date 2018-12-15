@@ -1,10 +1,10 @@
 import {
-    MachineBox,
     getMachineBox,
     getCurrentMachineBox,
     transaction,
     unregisterBox,
 } from '../src/transactions';
+import MachineBox from '../src/domain/MachineBox';
 import {
     NoOpenTransaction,
     StateMachineWasBroken,
@@ -81,19 +81,20 @@ describe('machine-box', () => {
         const box1 = createBox(simpleMachine);
         const box2 = createBox(simpleMachine2);
 
-        expect(transaction(box1)(() => () => getCurrentMachineBox())()).toBe(box1);
-        expect(transaction(box2)(() => () => getCurrentMachineBox())()).toBe(box2);
+        expect(transaction(box1)(getCurrentMachineBox)).toBe(box1);
+        expect(transaction(box2)(getCurrentMachineBox)).toBe(box2);
 
-        const nestedTransaction = transaction(box2)(() => (res) => {
-            res.box2 = getCurrentMachineBox();
-        });
-        const aroundTransaction = transaction(box1)(() => (res) => {
-            nestedTransaction(res);
-            res.box1 = getCurrentMachineBox();
-        });
+        const nestedTransactions = (result) =>
+            transaction(box1)(() => {
+                transaction(box2)(() => {
+                    result.box2 = getCurrentMachineBox();
+                });
+
+                result.box1 = getCurrentMachineBox();
+            });
         const startTransactions = () => {
             const result = { box1: null, box2: null };
-            aroundTransaction(result);
+            nestedTransactions(result);
             return result;
         };
         const result = startTransactions();
@@ -108,19 +109,20 @@ describe('machine-box', () => {
         const box1 = createBox(simpleMachine);
         const box2 = createBox(simpleMachine2);
 
-        expect(transaction(box1)((mBox) => () => mBox)()).toBe(box1);
-        expect(transaction(box2)((mBox) => () => mBox)()).toBe(box2);
+        expect(transaction(box1)((mBox) => mBox)).toBe(box1);
+        expect(transaction(box2)((mBox) => mBox)).toBe(box2);
 
-        const nestedTransaction = transaction(box2)((mbox2) => (res) => {
-            res.box2 = mbox2;
-        });
-        const aroundTransaction = transaction(box1)((mbox1) => (res) => {
-            nestedTransaction(res);
-            res.box1 = mbox1;
-        });
+        const nestedTransactions = (result) =>
+            transaction(box1)((mBox) => {
+                transaction(box2)((mBox) => {
+                    result.box2 = mBox;
+                });
+
+                result.box1 = mBox;
+            });
         const startTransactions = () => {
             const result = { box1: null, box2: null };
-            aroundTransaction(result);
+            nestedTransactions(result);
             return result;
         };
         const result = startTransactions();
@@ -134,13 +136,15 @@ describe('machine-box', () => {
     it('machine should be broken if error in transaction', () => {
         const box = createBox(simpleMachine);
 
-        const errorTransaction = transaction(box)((box) => () => {
-            throw 'error';
-        });
-        const newTransaction = transaction(box)((box) => () => {
-            const res = 1;
-            return res;
-        });
+        const errorTransaction = () =>
+            transaction(box)(() => {
+                throw 'error';
+            });
+        const newTransaction = () =>
+            transaction(box)(() => {
+                const res = 1;
+                return res;
+            });
         expect(errorTransaction).toThrow(new StateMachineError('error'));
         expect(box.broken).toBeTruthy();
         expect(newTransaction).toThrow(new StateMachineWasBroken());
