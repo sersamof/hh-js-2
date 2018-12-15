@@ -1,5 +1,4 @@
-import { transaction } from "../transactions";
-import { transition } from "../operations";
+import { transaction } from '../transactions';
 
 export default function StateMachine(box) {
     this.id = box.machine.id;
@@ -12,7 +11,7 @@ export default function StateMachine(box) {
     this.transition = (...args) => {
         return new Promise((resolve, reject) => {
             try {
-                transaction(box)(transition)(...args);
+                transaction(box, ...args)((box) => box.transition(...args));
                 resolve([this.getState(), this.getContext()]);
             } catch (err) {
                 reject(err);

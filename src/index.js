@@ -3,7 +3,6 @@ import StateMachine from './domain/StateMachine';
 import { StateMachineInitializeError } from './domain/errors';
 
 const { initializeBox, getCurrentMachineBox, transaction } = require('./transactions');
-const { setContext, setState: rawSetState } = require('./operations');
 
 const machine = (desc) => {
     if (
@@ -19,12 +18,17 @@ const machine = (desc) => {
     return new StateMachine(box);
 };
 
-const setState = (box) => (state, event) => transaction(box)(rawSetState)(state, event);
+const useContext = () => {
+    const box = getCurrentMachineBox();
+    return [{ ...box.context }, (...args) => box.setContext(...args)];
+};
 
-const useContext = () => [
-    { ...getCurrentMachineBox().context },
-    setContext(getCurrentMachineBox()),
-];
-const useState = () => [getCurrentMachineBox().state, setState(getCurrentMachineBox())];
+const useState = () => {
+    const box = getCurrentMachineBox();
+    return [
+        box.state,
+        (state, event) => transaction(box, state, event)((box, ...args) => box.setState(...args)),
+    ];
+};
 
 export { machine, useContext, useState };
