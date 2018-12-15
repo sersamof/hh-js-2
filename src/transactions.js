@@ -46,7 +46,7 @@ const getMachineBox = (machineId) => {
 };
 
 const initializeBox = (machine, initialContext, initialState) => {
-    if (machine.id in machineBoxes && machineBoxes[machine.id] !== undefined) {
+    if (machineBoxes[machine.id] !== undefined) {
         throw new StateMachineInitializeError('Machine ' + machine.id + ' already exists');
     }
 
@@ -55,7 +55,7 @@ const initializeBox = (machine, initialContext, initialState) => {
 };
 
 const unregisterBox = (box) => {
-    delete machineBoxes[box.machine.id];
+    machineBoxes[box.machine.id] = undefined;
 };
 
 export { getMachineBox, initializeBox, getCurrentMachineBox, transaction, unregisterBox };
