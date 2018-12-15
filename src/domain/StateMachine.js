@@ -8,10 +8,12 @@ export default function StateMachine(box) {
     };
     this.isBroken = () => box.broken;
 
+    this.syncTransition = (...args) => transaction(box, ...args)((box) => box.transition(...args));
+
     this.transition = (...args) => {
         return new Promise((resolve, reject) => {
             try {
-                transaction(box, ...args)((box) => box.transition(...args));
+                this.syncTransition(...args);
                 resolve([this.getState(), this.getContext()]);
             } catch (err) {
                 reject(err);

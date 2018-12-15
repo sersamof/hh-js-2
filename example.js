@@ -23,7 +23,7 @@ const vacancyMachine = machine({
                             vacancyMachine.getContext(),
                             machineToBreak.getContext()
                         );
-                        machineToBreak.transition('RESPOND', {
+                        machineToBreak.syncTransition('RESPOND', {
                             resume: {
                                 name: 'Vasya',
                                 lastName: 'Pupkin',
