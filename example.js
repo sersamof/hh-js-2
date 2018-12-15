@@ -21,9 +21,9 @@ const vacancyMachine = machine({
                         console.log(
                             'start proc1',
                             vacancyMachine.getContext(),
-                            machineToBroke.getContext()
+                            machineToBreak.getContext()
                         );
-                        machineToBroke.transition('RESPOND', {
+                        machineToBreak.transition('RESPOND', {
                             resume: {
                                 name: 'Vasya',
                                 lastName: 'Pupkin',
@@ -49,7 +49,7 @@ const vacancyMachine = machine({
                                 console.log(
                                     'done proc1',
                                     vacancyMachine.getContext(),
-                                    machineToBroke.getContext()
+                                    machineToBreak.getContext()
                                 );
                             });
                     },
@@ -71,7 +71,7 @@ const vacancyMachine = machine({
     },
 });
 
-const machineToBroke = machine({
+const machineToBreak = machine({
     id: 'vacancy2',
     initialState: 'notResponded',
     context: { id: 1234 },
@@ -91,7 +91,7 @@ const machineToBroke = machine({
                         console.log(
                             'start proc2',
                             vacancyMachine.getContext(),
-                            machineToBroke.getContext()
+                            machineToBreak.getContext()
                         );
                         proc({
                             method: 'post',
@@ -108,7 +108,7 @@ const machineToBroke = machine({
                                 console.log(
                                     'done proc2',
                                     vacancyMachine.getContext(),
-                                    machineToBroke.getContext()
+                                    machineToBreak.getContext()
                                 );
                             });
                     },
